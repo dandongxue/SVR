@@ -1,15 +1,18 @@
-#include "iostream.h"
-#include "fstream.h"
-#include "algorithm"
-#include "ctype.h"
-#include "math.h"
-#include "stdlib.h"
-#include "time.h"
-#define N 280//样本总数
-#define end_support_i 140  //140条训练集
+#include <iostream>
+#include <string.h>
+#include <fstream>
+#include <algorithm>
+#include <ctype.h>
+#include <math.h>
+#include <stdlib.h>
+#include <time.h>
+#define N 140//样本总数
+#define end_support_i 120  //140条训练集
 #define Dimen 5 //维数
 #define INF 0x7f7f7f7f
+using namespace std;
 const int C=1024;    //惩罚因子
+const int first_test_i=81;
 const double eps=1e-3;//一个近似0的小数
 const int two_sigma_squared=2;//RBF(Radial-Basis Function)核函数中的参数
 double alph[2*end_support_i];//alph扩大为2倍
@@ -55,7 +58,7 @@ for(int i=0;i<2*end_support_i;i++)
 	}
 }
 double obj_min=INF;
-for(i=0;i<2*end_support_i;i++)
+for(int i=0;i<2*end_support_i;i++)
 {
   if((y[i]==1&&alph[i]>0)||(y[i]==-1)&&alph[i]<C)
   {
@@ -244,7 +247,7 @@ void  OutPutFile()
 		}
 		outClientFile<<"n_support_vectors="<<n_support_vectors<<endl;
 		outClientFile<<"rate="<<(double)n_support_vectors/first_test_i<<endl;
-		for(i=0;i<end_support_i;i++)
+		for(int i=0;i<end_support_i;i++)
 		{
 				outClientFile<<"alph["<<i<<"]="<<alph[i]-alph[i+end_support_i]<<endl;
 		}
