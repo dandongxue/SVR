@@ -6,24 +6,23 @@
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
-#define N 140//样本总数
-#define end_support_i 120  //140条训练集
-#define Dimen 5 //维数
+#define N 140              //Total Sample Num
+#define end_support_i 140  //Training Sample Num
+#define Dimen 5 //The Sample Dimension
 #define INF 0x7f7f7f7f
 using namespace std;
-const int C=1024;    //惩罚因子
-const int first_test_i=81;
-const double eps=1e-3;//一个近似0的小数
-const int two_sigma_squared=2;//RBF(Radial-Basis Function)核函数中的参数
-double alph[2*end_support_i];//alph扩大为2倍
-int    y[2*end_support_i];//存放结果值yi
+const int C=1024;    //Paramter C
+const int first_test_i=1;
+const double eps=1e-3;
+const int two_sigma_squared=2;//RBF(Radial-Basis Function)Parameter
+double alph[2*end_support_i];//alph to be double
+int    y[2*end_support_i];//Get The Ans Y
 double G[2*end_support_i];
-double b;//偏置
-double p=0.125;//eplison参数
+double b;//thresh b
+double p=0.125;//Eplison Parameter
 double tau=1e-12;
-double target[N];//训练与测试样本的目标值
-double dense_points[N][Dimen];//存放训练与测试样本，0-end_support_i-1训练;first_test_i-N测试
-//函数的申明
+double target[N];//Store All The Samples Target
+double dense_points[N][Dimen];//Store Samles，0-end_support_i-1 For Training;first_test_i-N For Testing
 int Ansi=0,Ansj=0;
 int takeStep(int,int);
 double TestStudy(int k);
@@ -31,7 +30,7 @@ double kernel_funcp(int,int);
 double kernel_func(int,int);
 double dot_product_func(int,int);
 void  OutPutFile();
-void SelectAns()//选取一个需要进行优化的数据集
+void SelectAns()//To choose one datasets which needs to be optimization
 {
 Ansi=Ansj=-1;
 double G_max=-INF,G_max2=-INF;
@@ -84,13 +83,13 @@ if(G_max-G_min<eps)
 	 Ansj=-1;
 }
 }
-void setX() //录入样本数据
+void setX() //Reading Data
 {
 	ifstream inClientFile("battery_data.txt", ios::in);//ifstream用于从指定文件输入
 	if(!inClientFile)
 	{
 		cerr<<"File could not be opened!"<<endl;
-		exit(1);//exit的作用为终止程序。
+		exit(1);//Exit To End
 	}
 	int i=0,j=0;
 	double a_data;//a_data为每次读到的数据, 默认为6位有效数字。
@@ -110,18 +109,14 @@ void setX() //录入样本数据
 			j++;
 			}	
 	}
-	inClientFile.close();//显式关闭不再引用的文件。
-/*	for(i=0;i<20;i++)
-	{
-		cout<<target[i]<<endl;
-	}*/
+	inClientFile.close();
 }
 void Initialize()
 {
-	b=0.0;//初始化偏置b 0
-	memset(alph,0,sizeof(alph));//初始化alph向量
-    memset(y,-1,sizeof(y));
-	setX();//录入数据
+	b=0.0;//Init b
+	memset(alph,0,sizeof(alph));
+        memset(y,-1,sizeof(y));
+	setX();//Reading Data
 }
 int main()
 {
@@ -129,11 +124,11 @@ Initialize();
 int iter=0;
 while(1)
 {
-	SelectAns();//选出两个变量作为待调整变量
+	SelectAns();//Select Two Variable To Adjust
 	if(Ansj==-1)
-		break;
+	   break;
 	double a,OldAi,OldAj,deltaAi,deltaAj,sum;
-    a=kernel_func(Ansi,Ansi)+kernel_func(Ansj,Ansj)-2*kernel_func(Ansi,Ansj);
+        a=kernel_func(Ansi,Ansi)+kernel_func(Ansj,Ansj)-2*kernel_func(Ansi,Ansj);
 	if(a<=0)a=tau;
 	OldAi=alph[Ansi],OldAj=alph[Ansj];
 	if(y[Ansi]!=y[Ansj])
@@ -219,13 +214,13 @@ while(1)
 	deltaAi=alph[Ansi]-OldAi,deltaAj=alph[Ansj]-OldAj;
 	for(int i=0;i<2*end_support_i;i++)
 	  G[i]+=kernel_func(i,Ansi)*deltaAi+kernel_func(i,Ansj)*deltaAj;
-	if(iter++>1985900)
+	if(iter++>2985900)//The Bigest Iter Num!
 		break;
-	if(iter%1000==0)
-	  cout<<"Iter: "<<iter<<endl;
+	if(iter%3000==0)
+	  cout<<"Iter:[ "<<iter<<" ]"<<endl;
 	}
 	cout<<"Iter: "<<iter<<endl;
-	for(int i=0;i<140 ;i++)//这是输出预测的东西了
+	for(int i=0;i<N;i++)//这是输出预测的东西了
 		cout<<"Precate: "<<TestStudy(i)<<"  True:"<<target[i]<<"  Dis:"<<fabs(TestStudy(i)-target[i])<<endl;		
 	OutPutFile();
 	return 0;
@@ -236,7 +231,7 @@ void  OutPutFile()
 	outClientFile<<"Dimension="<<Dimen<<endl;//维数
 	outClientFile<<"b="<<b<<endl;//threshold
 	outClientFile<<"two_sigma_squared="<<two_sigma_squared<<endl;
-    outClientFile<<"C="<<C<<endl;
+    	outClientFile<<"C="<<C<<endl;
 	int n_support_vectors=0;
 		for(int i=0;i<end_support_i;i++)
 		{
@@ -246,7 +241,7 @@ void  OutPutFile()
 			}
 		}
 		outClientFile<<"n_support_vectors="<<n_support_vectors<<endl;
-		outClientFile<<"rate="<<(double)n_support_vectors/first_test_i<<endl;
+		outClientFile<<"support vector rate="<<(double)n_support_vectors/end_support_i<<endl;
 		for(int i=0;i<end_support_i;i++)
 		{
 				outClientFile<<"alph["<<i<<"]="<<alph[i]-alph[i+end_support_i]<<endl;
@@ -260,10 +255,10 @@ double TestStudy(int k)
 	{
 			s+=(alph[i]-alph[i+end_support_i])*kernel_funcp(i,k);		
 	}
-	s-=b;   //因为上面计算中  b=-b
+	s-=b;   //Because  b=-b
 	return s;
 }
-double dot_product_func(int i1,int i2)//计算向量内积
+double dot_product_func(int i1,int i2)//Dot product
 {
 	double dot=0;
 	for(int i=0;i<Dimen;i++)
@@ -273,8 +268,8 @@ double dot_product_func(int i1,int i2)//计算向量内积
 	return dot;
 }
 //The kernel_func(int, int) is RBF(Radial-Basis Function).
-//K(Xi, Xj)=exp(-||Xi-Xj||^2/(r))   //r的值需要人为指定
-double kernel_func(int i1,int i2)//处理后的径向基核函数  YiYjKernel(i,j)其实也可以不出理
+//K(Xi, Xj)=exp(-||Xi-Xj||^2/(r))   
+double kernel_func(int i1,int i2)//The New RBF Kenel 
 {
 	double Ans=0;
 	if(i1<end_support_i&&i2<end_support_i)
@@ -305,9 +300,9 @@ double kernel_func(int i1,int i2)//处理后的径向基核函数  YiYjKernel(i,
 	}
 	return Ans;
 }
-double kernel_funcp(int i1,int i2)//预测中使用径向基核函数使用
+double kernel_funcp(int i1,int i2)//Kenel Of RBF
 {
-    double Ans=0;
+    	double Ans=0;
 	double s=dot_product_func(i1,i2);
 	s*=-2;
 	s+=dot_product_func(i1,i1)+dot_product_func(i2,i2);
