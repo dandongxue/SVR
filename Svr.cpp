@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <string.h>
 #include <fstream>
 #include <algorithm>
@@ -25,6 +26,7 @@ double target[N];//Store All The Samples Target
 double dense_points[N][Dimen];//Store Samles，0-end_support_i-1 For Training;first_test_i-N For Testing
 int Ansi=0,Ansj=0;
 int takeStep(int,int);
+const int MaxIterNum=400000;
 double TestStudy(int k);
 double kernel_funcp(int,int);
 double kernel_func(int,int);
@@ -42,8 +44,8 @@ for(int i=0;i<2*end_support_i;i++)
 	  if(alph[i]<C)
 		  if(-G[i]>=G_max)
 		  {
-		  Ansi=i;
-		  G_max=-G[i];
+		        Ansi=i;
+		        G_max=-G[i];
 		  }
 	}
 	else
@@ -51,8 +53,8 @@ for(int i=0;i<2*end_support_i;i++)
 	if(alph[i]>0)
 		if(G[i]>=G_max)
 		{
-		G_max=G[i];
-		Ansi=i;
+	        	G_max=G[i];
+	        	Ansi=i;
 		}
 	}
 }
@@ -61,7 +63,7 @@ for(int i=0;i<2*end_support_i;i++)
 {
   if((y[i]==1&&alph[i]>0)||(y[i]==-1)&&alph[i]<C)
   {
-	  b=G_max+y[i]*G[i];//Ansi已经找到 求Bij可以直接y[i]*G[i]+G_max
+	  b=G_max+y[i]*G[i];//Find Ansi Then Bij=y[i]*G[i]+G_max
 	  if(-y[i]*G[i]<=G_min)
 		  G_min=-y[i]*G[i];
 	  if(b>0)
@@ -83,9 +85,9 @@ if(G_max-G_min<eps)
 	 Ansj=-1;
 }
 }
-void setX() //Reading Data
+void setX(const char* fileName) //Reading Data
 {
-	ifstream inClientFile("battery_data.txt", ios::in);//ifstream用于从指定文件输入
+	ifstream inClientFile(fileName, ios::in);//ifstream用于从指定文件输入
 	if(!inClientFile)
 	{
 		cerr<<"File could not be opened!"<<endl;
@@ -111,16 +113,16 @@ void setX() //Reading Data
 	}
 	inClientFile.close();
 }
-void Initialize()
+void Initialize(const char* fileName)
 {
 	b=0.0;//Init b
 	memset(alph,0,sizeof(alph));
         memset(y,-1,sizeof(y));
-	setX();//Reading Data
+	setX(fileName);//Reading Data
 }
 int main()
 {
-Initialize();
+Initialize("battery_data.txt");
 int iter=0;
 while(1)
 {
@@ -214,14 +216,17 @@ while(1)
 	deltaAi=alph[Ansi]-OldAi,deltaAj=alph[Ansj]-OldAj;
 	for(int i=0;i<2*end_support_i;i++)
 	  G[i]+=kernel_func(i,Ansi)*deltaAi+kernel_func(i,Ansj)*deltaAj;
-	if(iter++>2985900)//The Bigest Iter Num!
+	if(iter++>MaxIterNum)//The Bigest Iter Num!
 		break;
-	if(iter%3000==0)
-	  cout<<"Iter:[ "<<iter<<" ]"<<endl;
+	if(iter%1000==0)
+		{
+  		  	float pro=float(iter*100.0/MaxIterNum);
+			cout<<"======>>"<<setfill('0')<<setw(5)<<setprecision(4)<<pro<<"%\r";
+		}
 	}
 	cout<<"Iter: "<<iter<<endl;
 	for(int i=0;i<N;i++)//这是输出预测的东西了
-		cout<<"Precate: "<<TestStudy(i)<<"  True:"<<target[i]<<"  Dis:"<<fabs(TestStudy(i)-target[i])<<endl;		
+		cout<<"SVR Precate("<<i<<"):"<<TestStudy(i)+6.7<<"  True Value:"<<target[i]<<" Fabs="<<fabs(TestStudy(i)+6.7-target[i])<<endl;		
 	OutPutFile();
 	return 0;
 }
